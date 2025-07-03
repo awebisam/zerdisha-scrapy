@@ -15,7 +15,7 @@ The spider demonstrates:
 
 import re
 from datetime import datetime, timezone
-from typing import Any, Generator, Optional
+from typing import Any, Generator, List, Optional
 
 import feedparser
 import scrapy
@@ -45,7 +45,7 @@ class KathmandupostSpider(scrapy.Spider):
     """
 
     name: str = "kathmandupost"
-    allowed_domains: list[str] = ["kathmandupost.com"]
+    allowed_domains: List[str] = ["kathmandupost.com"]
     rss_url: str = "https://kathmandupost.com/rss"
 
     def start_requests(self) -> Generator[Request, None, None]:
@@ -124,7 +124,7 @@ class KathmandupostSpider(scrapy.Spider):
 
         try:
             # Extract full article content using CSS selector
-            paragraphs: list[str] = response.css('main p::text').getall()
+            paragraphs: List[str] = response.css('main p::text').getall()
 
             if not paragraphs:
                 self.logger.warning(
