@@ -320,7 +320,7 @@ class TestTimestampPipeline(unittest.TestCase):
         
         # Test unsupported type
         with self.assertRaises(ValueError):
-            self.pipeline._standardize_timestamp(12345)
+            self.pipeline._standardize_timestamp("12345")
 
 
 if __name__ == '__main__':

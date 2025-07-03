@@ -16,14 +16,14 @@ import scrapy
 
 class ArticleItem(scrapy.Item):
     """Core data structure for news articles scraped from various sources.
-    
+
     This item represents a standardized format for all news articles
     collected by the Zerdisha data ingestion system. It ensures consistent
     data structure across different news sources and spiders.
-    
+
     All date fields are timezone-aware and serialized as ISO 8601 strings
     to maintain consistency and enable proper temporal analysis.
-    
+
     Fields:
         url: The canonical URL of the article.
         source_name: Name of the news source/publication.
@@ -34,47 +34,47 @@ class ArticleItem(scrapy.Item):
         scraped_at: When this article was scraped by our system (ISO 8601).
         spider_name: Name of the spider that collected this article.
     """
-    
+
     # Article identification and source
-    url: str = scrapy.Field(
+    url = scrapy.Field(
         serializer=str,
         doc="The canonical URL where this article was found"
     )
-    
-    source_name: str = scrapy.Field(
+
+    source_name = scrapy.Field(
         serializer=str,
         doc="Name of the news source or publication (e.g., 'BBC News', 'Reuters')"
     )
-    
+
     # Article content
-    title: str = scrapy.Field(
+    title = scrapy.Field(
         serializer=str,
         doc="The article's headline or title"
     )
-    
-    full_text: str = scrapy.Field(
+
+    full_text = scrapy.Field(
         serializer=str,
         doc="Complete article body text, cleaned of HTML and formatting"
     )
-    
-    author: Optional[str] = scrapy.Field(
+
+    author = scrapy.Field(
         serializer=str,
         doc="Article author name(s), if available"
     )
-    
+
     # Temporal information (timezone-aware, ISO 8601 format)
-    publication_date: Optional[str] = scrapy.Field(
+    publication_date = scrapy.Field(
         serializer=str,
         doc="Original publication date as ISO 8601 string (timezone-aware)"
     )
-    
-    scraped_at: str = scrapy.Field(
+
+    scraped_at = scrapy.Field(
         serializer=str,
         doc="Timestamp when this article was scraped as ISO 8601 string (timezone-aware)"
     )
-    
+
     # Metadata
-    spider_name: str = scrapy.Field(
+    spider_name = scrapy.Field(
         serializer=str,
         doc="Name of the spider that collected this article"
     )

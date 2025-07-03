@@ -25,69 +25,73 @@ from zerdisha_scrapers.items import ArticleItem
 
 class KathmandupostSpider(scrapy.Spider):
     """Hybrid RSS/Scrapy spider for The Kathmandu Post news articles.
-    
+
     This spider uses The Kathmandu Post's RSS feed to discover new articles
     and then scrapes the full content from individual article pages. It
     demonstrates the hybrid approach combining efficient RSS-based discovery
     with comprehensive content extraction.
-    
+
     The spider follows all project coding standards including:
     - Strict typing throughout all methods
     - Comprehensive error handling and logging
     - Proper ArticleItem instantiation and population
     - Timezone-aware datetime handling
-    
+
     Attributes:
         name: Unique identifier for this spider.
         allowed_domains: List of domains this spider is allowed to crawl.
         rss_url: The RSS feed URL for article discovery.
     """
-    
+
     name: str = "kathmandupost"
     allowed_domains: list[str] = ["kathmandupost.com"]
     rss_url: str = "https://kathmandupost.com/rss"
 
     def start_requests(self) -> Generator[Request, None, None]:
         """Generate initial requests by parsing the RSS feed.
-        
+
         This method fetches and parses The Kathmandu Post's RSS feed to
         discover new articles. For each article found in the feed, it
         creates a request to the full article page with metadata preserved.
-        
+
         Yields:
             Request: Scrapy requests for individual article pages with
                     RSS metadata passed via the meta parameter.
         """
-        self.logger.info(f"Starting {self.name} spider with RSS feed: {self.rss_url}")
-        
+        self.logger.info(
+            f"Starting {self.name} spider with RSS feed: {self.rss_url}")
+
         try:
             # Parse the RSS feed using feedparser
             self.logger.debug(f"Fetching RSS feed from: {self.rss_url}")
             feed = feedparser.parse(self.rss_url)
-            
+
             if feed.bozo:
-                self.logger.warning(f"RSS feed parsing had issues: {feed.bozo_exception}")
-            
+                self.logger.warning(
+                    f"RSS feed parsing had issues: {feed.bozo_exception}")
+
             # Check if we got any entries
             if not hasattr(feed, 'entries') or not feed.entries:
-                self.logger.error(f"No entries found in RSS feed: {self.rss_url}")
+                self.logger.error(
+                    f"No entries found in RSS feed: {self.rss_url}")
                 return
-            
+
             self.logger.info(f"Found {len(feed.entries)} articles in RSS feed")
-            
+
             # Create requests for each article in the feed
             for entry in feed.entries:
                 if not hasattr(entry, 'link') or not entry.link:
                     self.logger.warning("RSS entry missing link, skipping")
                     continue
-                
+
                 # Extract metadata from RSS entry
-                article_url: str = entry.link
+                article_url: str = str(entry.link)
                 title: str = getattr(entry, 'title', '')
                 publication_date: str = getattr(entry, 'published', '')
-                
-                self.logger.debug(f"Creating request for article: {title[:50]}...")
-                
+
+                self.logger.debug(
+                    f"Creating request for article: {title[:50]}...")
+
                 # Yield request to the full article page
                 yield scrapy.Request(
                     url=article_url,
@@ -98,66 +102,71 @@ class KathmandupostSpider(scrapy.Spider):
                         'spider_start_time': datetime.now(timezone.utc)
                     }
                 )
-        
+
         except Exception as e:
-            self.logger.error(f"Error processing RSS feed {self.rss_url}: {str(e)}")
+            self.logger.error(
+                f"Error processing RSS feed {self.rss_url}: {str(e)}")
 
     def parse_article(self, response: Response) -> Generator[ArticleItem, None, None]:
         """Parse individual article pages and extract full content.
-        
+
         This method extracts the complete article content from individual
         article pages using CSS selectors. It combines the content with
         metadata from the RSS feed to create a complete ArticleItem.
-        
+
         Args:
             response: The HTTP response object for an individual article page.
-            
+
         Yields:
             ArticleItem: Populated article item with extracted data and
                         RSS metadata.
         """
         self.logger.debug(f"Parsing article page: {response.url}")
-        
+
         try:
             # Extract full article content using CSS selector
             paragraphs: list[str] = response.css('main p::text').getall()
-            
+
             if not paragraphs:
-                self.logger.warning(f"No content found using CSS selector 'main p' for {response.url}")
+                self.logger.warning(
+                    f"No content found using CSS selector 'main p' for {response.url}")
                 return
-            
+
             # Join all paragraphs into full text
-            full_text: str = '\n\n'.join(paragraph.strip() for paragraph in paragraphs if paragraph.strip())
-            
+            full_text: str = '\n\n'.join(
+                paragraph.strip() for paragraph in paragraphs if paragraph.strip())
+
             if not full_text:
-                self.logger.warning(f"No meaningful content extracted from {response.url}")
+                self.logger.warning(
+                    f"No meaningful content extracted from {response.url}")
                 return
-            
+
             # Get metadata from RSS feed (passed via meta)
             rss_title: str = response.meta.get('rss_title', '')
-            rss_publication_date: str = response.meta.get('rss_publication_date', '')
-            
+            rss_publication_date: str = response.meta.get(
+                'rss_publication_date', '')
+
             # Use RSS title if available, otherwise try to extract from page
             title: str = rss_title
             if not title:
                 page_title: Optional[str] = response.css('h1::text').get()
                 title = page_title.strip() if page_title else ''
-            
+
             if not title:
                 self.logger.warning(f"No title found for {response.url}")
                 return
-            
+
             # Extract author if available (optional field)
             author: Optional[str] = response.css('.article-author::text').get()
             if author:
                 author = author.strip()
-            
+
             # Create timezone-aware timestamps in ISO 8601 format
             scraped_at: str = datetime.now(timezone.utc).isoformat()
-            
+
             # Create and populate the ArticleItem
             article: ArticleItem = ArticleItem()
-            
+
             article['url'] = str(response.url)
             article['source_name'] = "The Kathmandu Post"
             article['title'] = title.strip()
@@ -166,20 +175,22 @@ class KathmandupostSpider(scrapy.Spider):
             article['publication_date'] = rss_publication_date if rss_publication_date else None
             article['scraped_at'] = scraped_at
             article['spider_name'] = self.name
-            
-            self.logger.info(f"Successfully extracted article: {title[:50]}...")
-            
+
+            self.logger.info(
+                f"Successfully extracted article: {title[:50]}...")
+
             yield article
-            
+
         except Exception as e:
-            self.logger.error(f"Error parsing article {response.url}: {str(e)}")
+            self.logger.error(
+                f"Error parsing article {response.url}: {str(e)}")
 
     def closed(self, reason: str) -> None:
         """Called when the spider closes.
-        
+
         This method is called when the spider finishes crawling.
         It provides final logging and cleanup operations.
-        
+
         Args:
             reason: The reason why the spider was closed.
         """
