@@ -24,7 +24,7 @@ class TestHimalayanSpider(unittest.TestCase):
         """Test that spider has correct basic attributes."""
         self.assertEqual(self.spider.name, "himalayan")
         self.assertEqual(self.spider.allowed_domains, ["thehimalayantimes.com"])
-        self.assertEqual(self.spider.rss_url, "https://thehimalayantimes.com/feed")
+        self.assertEqual(self.spider.rss_url, "https://thehimalayantimes.com/rss")
     
     @patch('zerdisha_scrapers.spiders.himalayan.feedparser.parse')
     def test_start_requests_creates_requests_from_rss_feed(self, mock_feedparser):

@@ -46,7 +46,7 @@ class HimalayanSpider(scrapy.Spider):
 
     name: str = "himalayan"
     allowed_domains: List[str] = ["thehimalayantimes.com"]
-    rss_url: str = "https://thehimalayantimes.com/feed"
+    rss_url: str = "https://thehimalayantimes.com/rss"
 
     def start_requests(self) -> Generator[Request, None, None]:
         """Generate initial requests by parsing the RSS feed.
@@ -146,7 +146,7 @@ class HimalayanSpider(scrapy.Spider):
             # Use RSS title if available, otherwise try to extract from page
             title: str = rss_title
             if not title:
-                page_title: Optional[str] = response.css('h1::text').get()
+                page_title: Optional[str] = response.css('h1.article-title::text').get()
                 title = page_title.strip() if page_title else ''
 
             if not title:
@@ -154,7 +154,9 @@ class HimalayanSpider(scrapy.Spider):
                 return
 
             # Extract author if available (optional field)
-            author: Optional[str] = response.css('.article-author::text').get()
+            author: Optional[str] = response.css('.author-name::text').get()
+            if not author:
+                author = response.css('span.byline::text').get()
             if author:
                 author = author.strip()
 
@@ -199,6 +201,30 @@ class HimalayanSpider(scrapy.Spider):
             The publication date in ISO 8601 format, or None if not found.
         """
         try:
+            # Try to extract from publication date selector first
+            pub_date_element: Optional[str] = response.css('.published-date::text').get()
+            
+            if pub_date_element:
+                try:
+                    # Parse human-readable date and return ISO format
+                    from dateutil import parser
+                    parsed_date = parser.parse(pub_date_element.strip())
+                    return parsed_date.date().isoformat()
+                except (ValueError, ImportError):
+                    self.logger.debug(
+                        f"Could not parse published date: {pub_date_element}")
+
+            # Try time element selector
+            time_text: Optional[str] = response.css('time::text').get()
+            if time_text:
+                try:
+                    from dateutil import parser
+                    parsed_date = parser.parse(time_text.strip())
+                    return parsed_date.date().isoformat()
+                except (ValueError, ImportError):
+                    self.logger.debug(
+                        f"Could not parse time text: {time_text}")
+
             # Try to extract from meta tags or common date selectors
             # Check for meta property for publication date
             pub_date_meta: Optional[str] = response.css(
