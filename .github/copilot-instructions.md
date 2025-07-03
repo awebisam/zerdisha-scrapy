@@ -49,7 +49,8 @@ datetime.now(timezone.utc).isoformat()
 
 ## 3. 🕷️ Spider Development Standards
 
-- Use `zerdisha_scrapers/spiders/example.py` as the **template and gold standard**.
+- Use `zerdisha_scrapers/spiders/kathmandupost.py` as the **template and gold standard**.
+- This spider demonstrates **hybrid RSS/Scrapy approach** with robust publication date extraction.
 
 ### ✅ Logging:
 Use `self.logger` with proper levels:
@@ -61,6 +62,13 @@ Use `self.logger` with proper levels:
 ### 🔁 Robust Parsing:
 - Use `try...except` in the `parse()` method to catch and log errors.
 - Prevent crashing on individual page failures.
+
+### 📅 Publication Date Extraction:
+- Implement multiple fallback strategies for date extraction
+- Primary: Extract from article page elements (CSS selectors, meta tags)
+- Fallback: Parse from URL structure (e.g., `/2025/07/03/`)
+- Always validate and format dates to ISO 8601 format
+- Handle cases where publication dates are unavailable gracefully
 
 ### ❌ Do NOT:
 - Clean data (e.g. whitespace stripping)

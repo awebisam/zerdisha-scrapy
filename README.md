@@ -45,12 +45,23 @@ All scraped data follows the `ArticleItem` schema, ensuring consistency across a
 - **scraped_at**: Collection timestamp (ISO 8601)
 - **spider_name**: Collecting spider identifier
 
+### Publication Date Extraction
+
+The spiders implement robust publication date extraction with multiple fallback strategies:
+
+1. **Primary extraction**: Parse publication dates from article page elements
+2. **URL structure fallback**: Extract dates from URL patterns (e.g., `/2025/07/03/`)
+3. **Validation**: All dates are validated and formatted to ISO 8601 standard
+4. **Error handling**: Graceful handling when dates cannot be determined
+
+This ensures reliable date information even when news sources don't provide easily parseable publication dates.
+
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.8+
-- pip package manager
+- Python 3.12+
+- pip package manager or Poetry
 
 ### Installation
 
@@ -61,8 +72,16 @@ All scraped data follows the `ArticleItem` schema, ensuring consistency across a
    ```
 
 2. **Install dependencies**:
+   
+   **Using pip**:
    ```bash
-   pip install scrapy
+   pip install -r requirements.txt
+   ```
+   
+   **Using Poetry** (recommended):
+   ```bash
+   poetry install
+   poetry shell
    ```
 
 3. **Verify installation**:
@@ -77,14 +96,19 @@ All scraped data follows the `ArticleItem` schema, ensuring consistency across a
    scrapy list
    ```
 
-2. **Run the example spider**:
+2. **Run the Kathmandu Post spider**:
    ```bash
-   scrapy crawl example
+   scrapy crawl kathmandupost
    ```
 
-3. **Run with output to file**:
+3. **Run with limited items for testing**:
    ```bash
-   scrapy crawl example -o articles.json
+   scrapy crawl kathmandupost -s CLOSESPIDER_ITEMCOUNT=5
+   ```
+
+4. **Run with output to file**:
+   ```bash
+   scrapy crawl kathmandupost -o articles.json
    ```
 
 ### Project Structure
@@ -100,7 +124,7 @@ zerdisha-scrapy/
 │   ├── settings.py           # Project settings and configuration
 │   └── spiders/              # Spider implementations
 │       ├── __init__.py
-│       └── example.py        # Example spider template
+│       └── kathmandupost.py  # Kathmandu Post hybrid RSS/Scrapy spider
 └── README.md                 # This file
 ```
 
@@ -141,14 +165,22 @@ We follow strict coding standards to ensure high-quality, maintainable code:
 
 ### Adding New Spiders
 
-When creating new spiders, use the `example.py` spider as your template. Ensure your spider:
+When creating new spiders, use the `kathmandupost.py` spider as your template. This spider demonstrates best practices including:
+
+- **Hybrid RSS/Scrapy approach**: Efficient article discovery via RSS with comprehensive content extraction
+- **Robust date extraction**: Multiple fallback strategies for publication date extraction
+- **Error handling**: Comprehensive exception handling and logging
+- **URL parsing**: Smart date extraction from URL structure when article pages don't provide clear dates
+
+Ensure your spider:
 
 - Inherits from `scrapy.Spider`
 - Uses strict typing throughout
 - Implements comprehensive logging with `self.logger`
 - Properly populates `ArticleItem` instances
-- Handles errors gracefully
+- Handles errors gracefully with try/except blocks
 - Includes thorough documentation
+- Extracts publication dates reliably (with fallback strategies)
 
 ### Example Spider Creation
 
@@ -156,7 +188,7 @@ When creating new spiders, use the `example.py` spider as your template. Ensure 
 # Generate a new spider using Scrapy's generator
 scrapy genspider news_source example-news.com
 
-# Then customize it following our standards and the example.py template
+# Then customize it following our standards and the kathmandupost.py template
 ```
 
 ## Deployment
