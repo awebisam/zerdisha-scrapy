@@ -60,7 +60,7 @@ This ensures reliable date information even when news sources don't provide easi
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.8+
 - pip package manager or Poetry
 
 ### Installation
