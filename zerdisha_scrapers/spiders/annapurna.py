@@ -46,7 +46,7 @@ class AnnapurnaSpider(scrapy.Spider):
 
     name: str = "annapurna"
     allowed_domains: List[str] = ["theannapurnaexpress.com"]
-    rss_url: str = "https://theannapurnaexpress.com/feed"
+    rss_url: str = "https://theannapurnaexpress.com/rss/"
 
     def start_requests(self) -> Generator[Request, None, None]:
         """Generate initial requests by parsing the RSS feed.
@@ -146,7 +146,7 @@ class AnnapurnaSpider(scrapy.Spider):
             # Use RSS title if available, otherwise try to extract from page
             title: str = rss_title
             if not title:
-                page_title: Optional[str] = response.css('h1::text').get()
+                page_title: Optional[str] = response.css('h1.single-title::text').get()
                 title = page_title.strip() if page_title else ''
 
             if not title:
@@ -154,7 +154,7 @@ class AnnapurnaSpider(scrapy.Spider):
                 return
 
             # Extract author if available (optional field)
-            author: Optional[str] = response.css('.article-author::text').get()
+            author: Optional[str] = response.css('.author-name::text, span.byline::text').get()
             if author:
                 author = author.strip()
 
@@ -214,7 +214,7 @@ class AnnapurnaSpider(scrapy.Spider):
 
             # Try to extract from published date text on the page
             published_text: Optional[str] = response.css(
-                '.post-date::text, .entry-date::text, .published::text').get()
+                '.published-date::text, time::text').get()
 
             if published_text:
                 published_text = published_text.strip()
