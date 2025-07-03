@@ -7,7 +7,7 @@ constantly==23.10.4
 cryptography==41.0.3
 cssselect==1.2.0
 feedparser==6.0.11
-filelock==3.18.0
+filelock==3.16.0
 hyperlink==21.0.0
 idna==3.7
 incremental==24.7.2
@@ -17,9 +17,9 @@ jmespath==1.0.1
 lxml==4.9.3
 packaging==25.0
 parsel==1.8.1
-Protego==0.5.0
+protego==0.5.0
 pyasn1==0.6.1
-pyasn1_modules==0.4.2
+pyasn1-modules==0.4.2
 pycparser==2.22
 PyDispatcher==2.0.7
 pyOpenSSL==23.2.0
@@ -34,7 +34,7 @@ six==1.17.0
 tldextract==5.1.2
 tomli==2.2.1
 Twisted==22.10.0
-typing_extensions==4.13.0
+typing-extensions==4.13.0
 urllib3==1.6
 w3lib==2.1.2
 zope.interface==7.2
