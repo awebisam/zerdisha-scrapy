@@ -13,6 +13,7 @@ The spider demonstrates:
 - Timezone-aware datetime handling with ISO 8601 serialization
 """
 
+import re
 from datetime import datetime, timezone
 from typing import Any, Generator, Optional
 
@@ -87,7 +88,6 @@ class KathmandupostSpider(scrapy.Spider):
                 # Extract metadata from RSS entry
                 article_url: str = str(entry.link)
                 title: str = getattr(entry, 'title', '')
-                publication_date: str = getattr(entry, 'published', '')
 
                 self.logger.debug(
                     f"Creating request for article: {title[:50]}...")
@@ -98,7 +98,6 @@ class KathmandupostSpider(scrapy.Spider):
                     callback=self.parse_article,
                     meta={
                         'rss_title': title,
-                        'rss_publication_date': publication_date,
                         'spider_start_time': datetime.now(timezone.utc)
                     }
                 )
@@ -143,8 +142,6 @@ class KathmandupostSpider(scrapy.Spider):
 
             # Get metadata from RSS feed (passed via meta)
             rss_title: str = response.meta.get('rss_title', '')
-            rss_publication_date: str = response.meta.get(
-                'rss_publication_date', '')
 
             # Use RSS title if available, otherwise try to extract from page
             title: str = rss_title
@@ -161,6 +158,10 @@ class KathmandupostSpider(scrapy.Spider):
             if author:
                 author = author.strip()
 
+            # Extract publication date from the article page
+            publication_date: Optional[str] = self._extract_publication_date(
+                response)
+
             # Create timezone-aware timestamps in ISO 8601 format
             scraped_at: str = datetime.now(timezone.utc).isoformat()
 
@@ -172,7 +173,7 @@ class KathmandupostSpider(scrapy.Spider):
             article['title'] = title.strip()
             article['full_text'] = full_text
             article['author'] = author
-            article['publication_date'] = rss_publication_date if rss_publication_date else None
+            article['publication_date'] = publication_date
             article['scraped_at'] = scraped_at
             article['spider_name'] = self.name
 
@@ -184,6 +185,74 @@ class KathmandupostSpider(scrapy.Spider):
         except Exception as e:
             self.logger.error(
                 f"Error parsing article {response.url}: {str(e)}")
+
+    def _extract_publication_date(self, response: Response) -> Optional[str]:
+        """Extract publication date from the article page.
+
+        This method attempts to extract the publication date from various
+        sources on the article page, with fallback to URL parsing if needed.
+
+        Args:
+            response: The HTTP response object for an individual article page.
+
+        Returns:
+            The publication date in ISO 8601 format, or None if not found.
+        """
+        try:
+            # Try to extract from "Published at" text on the page
+            published_text: Optional[str] = response.css(
+                '.updated-time:contains("Published at") ::text').get()
+
+            if published_text:
+                # Clean up the text and extract the date part
+                # Example: "Published at : July 3, 2025"
+                published_text = published_text.strip()
+                if "Published at" in published_text:
+                    date_part = published_text.split("Published at")[1].strip()
+                    if date_part.startswith(":"):
+                        date_part = date_part[1:].strip()
+
+                    # Try to parse the date and convert to ISO format
+                    try:
+                        # Handle format like "July 3, 2025"
+                        parsed_date = datetime.strptime(date_part, "%B %d, %Y")
+                        return parsed_date.isoformat()
+                    except ValueError:
+                        self.logger.debug(
+                            f"Could not parse published date: {date_part}")
+
+            # Fallback: Extract date from URL structure
+            # URL format: https://kathmandupost.com/category/YYYY/MM/DD/article-slug
+            url_parts = response.url.split('/')
+            if len(url_parts) >= 6:
+                try:
+                    year = url_parts[4]
+                    month = url_parts[5]
+                    day = url_parts[6]
+
+                    # Validate that these are actually date components
+                    if (year.isdigit() and len(year) == 4 and
+                        month.isdigit() and len(month) == 2 and
+                            day.isdigit() and len(day) == 2):
+
+                        # Create ISO date string
+                        date_str = f"{year}-{month}-{day}"
+                        # Validate the date by parsing it
+                        datetime.strptime(date_str, "%Y-%m-%d")
+                        return date_str
+
+                except (ValueError, IndexError):
+                    self.logger.debug(
+                        f"Could not extract date from URL: {response.url}")
+
+            self.logger.warning(
+                f"No publication date found for {response.url}")
+            return None
+
+        except Exception as e:
+            self.logger.error(
+                f"Error extracting publication date from {response.url}: {str(e)}")
+            return None
 
     def closed(self, reason: str) -> None:
         """Called when the spider closes.
