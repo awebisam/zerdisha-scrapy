@@ -6,8 +6,11 @@ focusing on core functionality without complex logger mocking.
 
 import unittest
 from unittest.mock import Mock, patch
+from datetime import datetime, timezone
 
+from scrapy.http import HtmlResponse, Request
 from zerdisha_scrapers.spiders.himalayan import HimalayanSpider
+from zerdisha_scrapers.items import ArticleItem
 
 
 class TestHimalayanSpider(unittest.TestCase):
@@ -97,6 +100,56 @@ class TestHimalayanSpider(unittest.TestCase):
         # Verify results - should skip entry without link
         self.assertEqual(len(requests), 1)
         self.assertEqual(requests[0].url, "https://thehimalayantimes.com/article2")
+    
+    def test_parse_article_extracts_content_correctly(self):
+        """Test parse_article method extracts content using correct CSS selector."""
+        # Create a mock response with article content
+        html_content = """
+        <html>
+            <head><title>Test Article</title></head>
+            <body>
+                <h1>Sample Article Title</h1>
+                <div class="content-inner">
+                    <p>First paragraph of the article.</p>
+                    <p>Second paragraph with more content.</p>
+                    <p>Third paragraph to test joining.</p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        request = Request(
+            url="https://thehimalayantimes.com/test-article",
+            meta={'rss_title': 'Test Article From RSS'}
+        )
+        response = HtmlResponse(
+            url="https://thehimalayantimes.com/test-article",
+            body=html_content.encode('utf-8'),
+            encoding='utf-8',
+            request=request
+        )
+        
+        # Execute parse_article
+        articles = list(self.spider.parse_article(response))
+        
+        # Verify results
+        self.assertEqual(len(articles), 1)
+        article = articles[0]
+        
+        # Check ArticleItem fields
+        self.assertIsInstance(article, ArticleItem)
+        self.assertEqual(article['url'], "https://thehimalayantimes.com/test-article")
+        self.assertEqual(article['source_name'], "The Himalayan Times")
+        self.assertEqual(article['title'], "Test Article From RSS")
+        self.assertEqual(article['spider_name'], "himalayan")
+        
+        # Check full text extraction and joining
+        expected_text = "First paragraph of the article.\n\nSecond paragraph with more content.\n\nThird paragraph to test joining."
+        self.assertEqual(article['full_text'], expected_text)
+        
+        # Check timestamps are present
+        self.assertIsNotNone(article['scraped_at'])
+        self.assertTrue(article['scraped_at'].endswith('Z') or '+' in article['scraped_at'])
 
 
 if __name__ == '__main__':
