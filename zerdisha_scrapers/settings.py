@@ -72,9 +72,11 @@ DOWNLOAD_DELAY = 1  # Wait 1 second between requests to same domain
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    "zerdisha_scrapers.pipelines.ZerdishaScrapersPipeline": 300,
-#}
+ITEM_PIPELINES = {
+    'zerdisha_scrapers.pipelines.ValidationPipeline': 300,
+    'zerdisha_scrapers.pipelines.CleaningPipeline': 400,
+    'zerdisha_scrapers.pipelines.TimestampPipeline': 500,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
