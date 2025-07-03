@@ -22,6 +22,6 @@ feedparser==6.0.11
 
 # --- Optional (safe utility packages) ---
 six==1.17.0
-typing_extensions==4.14.0
+typing_extensions==4.13.0
 certifi==2024.2.2
 urllib3==2.2.1
