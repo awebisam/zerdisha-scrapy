@@ -1,4 +1,6 @@
-# Zerdisha Scrapers
+# Zerdisha Scrapers [Entirely Built By Layers of AI Agents]
+
+## Read the [Process](https://github.com/awebisam/zerdisha-scrapy/blob/main/PROCESS.md) for detailed breakdown. 
 
 A robust, scalable data ingestion engine for gathering news articles from sources worldwide, built with Scrapy and designed for deployment on Zyte Scrapy Cloud.
 
